@@ -764,6 +764,283 @@ select:focus { border-color: #3b6fd4; }
   width: 0%;
   transition: width 0.5s ease;
 }
+
+/* ── Submissions + moderation ─────────────────────────────────────────── */
+.submission-hub {
+  padding: 1rem 1.75rem 0.2rem;
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 0.9rem;
+}
+
+.submission-card,
+.admin-card {
+  background: #10131a;
+  border: 1px solid #1e2a42;
+  border-radius: 12px;
+  padding: 0.95rem 1rem;
+}
+
+.submission-title {
+  font-family: var(--f-display);
+  font-size: 0.95rem;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.submission-sub {
+  margin-top: 0.2rem;
+  font-family: var(--f-mono);
+  color: #4b6080;
+  font-size: 0.64rem;
+}
+
+.submission-form {
+  margin-top: 0.7rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.submission-grid {
+  display: grid;
+  grid-template-columns: 1fr 180px;
+  gap: 0.45rem;
+}
+
+.input,
+.textarea,
+.submission-form select,
+.admin-card input,
+.admin-card select {
+  width: 100%;
+  border-radius: 7px;
+  border: 1px solid #22314f;
+  background: #0f1422;
+  color: #c8d4e8;
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  padding: 0.48rem 0.58rem;
+  outline: none;
+  transition: border-color 0.14s;
+}
+
+.input:focus,
+.textarea:focus,
+.submission-form select:focus,
+.admin-card input:focus,
+.admin-card select:focus {
+  border-color: #3b6fd4;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.55;
+}
+
+.submission-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+}
+
+.btn {
+  border: 1px solid #1d3d7b;
+  background: #153268;
+  color: #dbeafe;
+  border-radius: 7px;
+  padding: 0.45rem 0.8rem;
+  font-family: var(--f-mono);
+  font-size: 0.68rem;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.14s, border-color 0.14s;
+}
+
+.btn:hover {
+  background: #1a3c7b;
+  border-color: #2650a0;
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn.secondary {
+  background: transparent;
+  border-color: #2a3346;
+  color: #9cb0cc;
+}
+
+.btn.secondary:hover {
+  background: #131b2d;
+  border-color: #3d4f6e;
+}
+
+.btn.success {
+  background: #14532d;
+  border-color: #1c6a3d;
+  color: #dcfce7;
+}
+
+.btn.danger {
+  background: #7f1d1d;
+  border-color: #9f2a2a;
+  color: #fee2e2;
+}
+
+.form-msg {
+  min-height: 1.2rem;
+  font-family: var(--f-mono);
+  font-size: 0.63rem;
+  color: #4b6080;
+}
+
+.form-msg.success { color: #86efac; }
+.form-msg.error { color: #fca5a5; }
+
+.admin-card {
+  padding-top: 0.75rem;
+}
+
+.admin-card > summary {
+  list-style: none;
+  cursor: pointer;
+  font-family: var(--f-display);
+  color: #e2e8f0;
+  font-size: 0.86rem;
+}
+
+.admin-card > summary::-webkit-details-marker { display: none; }
+
+.admin-card > summary::after {
+  content: '▾';
+  float: right;
+  color: #4b6080;
+  transition: transform 0.14s;
+}
+
+.admin-card[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.admin-body {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.admin-login-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.admin-welcome {
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  color: #8fb5f2;
+  margin-right: auto;
+}
+
+.admin-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.admin-filter-row label {
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  color: #4b6080;
+}
+
+.admin-queue {
+  max-height: 380px;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.55rem;
+  padding-right: 0.2rem;
+}
+
+.admin-item {
+  border: 1px solid #1f2a43;
+  background: #0f1422;
+  border-radius: 9px;
+  padding: 0.56rem 0.65rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-item-top {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-status {
+  margin-left: auto;
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #93c5fd;
+}
+
+.admin-status.rejected { color: #fca5a5; }
+.admin-status.approved { color: #86efac; }
+
+.admin-item h4 {
+  font-family: var(--f-display);
+  font-size: 0.76rem;
+  color: #fff;
+}
+
+.admin-item p {
+  font-family: var(--f-body);
+  color: #b8c7dc;
+  font-size: 0.71rem;
+  line-height: 1.5;
+}
+
+.admin-meta,
+.admin-contact,
+.admin-note {
+  font-family: var(--f-mono);
+  font-size: 0.59rem;
+  color: #6d82a6;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+
+.card-source {
+  margin-top: -0.1rem;
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  color: #8b97aa;
+}
+
+@media (max-width: 920px) {
+  .submission-hub {
+    grid-template-columns: 1fr;
+    padding: 0.85rem 0.8rem 0;
+  }
+
+  .submission-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 </head>
 <body>
@@ -835,6 +1112,63 @@ select:focus { border-color: #3b6fd4; }
     </div>
   </div>
 
+  <section class="submission-hub">
+    <div class="submission-card">
+      <h2 class="submission-title">Submit Your Own Idea</h2>
+      <p class="submission-sub">One submission per visitor every 24h. Approved ideas appear live in the archive.</p>
+
+      <form id="submission-form" class="submission-form">
+        <div class="submission-grid">
+          <input class="input" name="nickname" type="text" maxlength="40" placeholder="Name or nickname" required>
+          <select name="category" required>
+            <option value="general">General</option>
+            <option value="developer">Developer Tool</option>
+          </select>
+        </div>
+        <input class="input" name="title" type="text" maxlength="140" placeholder="Idea title" required>
+        <textarea class="textarea" name="description" maxlength="1600" placeholder="Describe the problem and your proposed solution..." required></textarea>
+        <input class="input" name="contact" type="text" maxlength="120" placeholder="Optional contact (email, X, Telegram)">
+        <div class="submission-actions">
+          <div id="submission-status" class="form-msg" aria-live="polite"></div>
+          <button type="submit" class="btn" id="submission-submit-btn">Send for approval</button>
+        </div>
+      </form>
+    </div>
+
+    <details class="admin-card" id="admin-card">
+      <summary>Moderation Board</summary>
+      <div class="admin-body">
+        <div id="admin-status" class="form-msg" aria-live="polite"></div>
+
+        <form id="admin-login-form" class="admin-login-form">
+          <input name="username" type="text" autocomplete="username" placeholder="Admin username" required>
+          <input name="password" type="password" autocomplete="current-password" placeholder="Admin password" required>
+          <button type="submit" class="btn">Login</button>
+        </form>
+
+        <div id="admin-panel" hidden>
+          <div class="admin-toolbar">
+            <span class="admin-welcome" id="admin-welcome">Signed in</span>
+            <button type="button" class="btn secondary" id="admin-refresh-btn">Refresh</button>
+            <button type="button" class="btn secondary" id="admin-logout-btn">Logout</button>
+          </div>
+
+          <div class="admin-filter-row">
+            <label for="admin-status-filter">Status</label>
+            <select id="admin-status-filter">
+              <option value="pending_approval">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+          </div>
+
+          <div id="admin-queue" class="admin-queue"></div>
+        </div>
+      </div>
+    </details>
+  </section>
+
   <main id="grid"></main>
 
 </div>
@@ -865,6 +1199,7 @@ select:focus { border-color: #3b6fd4; }
 
 const STORAGE_KEY = 'biz-idea-ratings-v1';
 const MIGRATION_KEY = 'biz-idea-ratings-migrated-v1';
+const APPROVED_REFRESH_MS = 30_000;
 
 const DIMS = [
   { key: 'feasibility', label: 'Feasibility',    icon: '⚡', hint: 'How easy is it to build and execute?' },
@@ -873,10 +1208,45 @@ const DIMS = [
   { key: 'demand',      label: 'Demand',         icon: '📈', hint: 'How strong and obvious is the market demand?' },
 ];
 
+const CATEGORY_SET = new Set(['general', 'developer']);
+
+function normalizeIdea(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = String(raw.id || '').trim();
+  const title = String(raw.title || '').trim();
+  const description = String(raw.description || '').trim();
+  const category = String(raw.category || '').trim().toLowerCase();
+  const date = /^\d{4}-\d{2}-\d{2}/.test(String(raw.date || ''))
+    ? String(raw.date).slice(0, 10)
+    : new Date().toISOString().slice(0, 10);
+
+  if (!id || !title || !description || !CATEGORY_SET.has(category)) return null;
+
+  return {
+    id,
+    title,
+    description,
+    category,
+    date,
+    sourceFile: String(raw.sourceFile || 'visitor-submissions'),
+    submittedBy: raw.submittedBy ? String(raw.submittedBy) : null,
+    submittedAt: raw.submittedAt ? Number(raw.submittedAt) : null,
+    approvedAt: raw.approvedAt ? Number(raw.approvedAt) : null,
+  };
+}
+
+const initialIdeas = (Array.isArray(window.IDEAS_DATA) ? window.IDEAS_DATA : [])
+  .map(normalizeIdea)
+  .filter(Boolean);
+
 // ── State ─────────────────────────────────────────────────────────────────
 
 const state = {
-  ideas:        (window.IDEAS_DATA || []),
+  generatedIdeas: initialIdeas,
+  approvedIdeas: [],
+  ideas:        initialIdeas.slice(),
+  approvedFingerprint: '',
   ratings:      {},
   community:    {},
   search:       '',
@@ -886,7 +1256,76 @@ const state = {
   sortBy:       'date-desc',
   selectedId:   null,
   apiOnline:    false,
+  admin: {
+    authenticated: false,
+    configured: true,
+    username: '',
+    queueStatus: 'pending_approval',
+  },
 };
+
+// ── Request helper ────────────────────────────────────────────────────────
+
+async function requestJson(url, options = {}, timeoutMs = 5000) {
+  const response = await fetch(url, {
+    ...options,
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+
+  let payload = {};
+  try {
+    payload = await response.json();
+  } catch (_) {
+    payload = {};
+  }
+
+  if (!response.ok) {
+    const err = new Error(payload.error || `Request failed (${response.status})`);
+    err.status = response.status;
+    err.payload = payload;
+    throw err;
+  }
+
+  return payload;
+}
+
+function ideaFingerprint(ideas) {
+  return ideas
+    .map(i => `${i.id}:${i.approvedAt || i.submittedAt || ''}`)
+    .sort()
+    .join('|');
+}
+
+function rebuildIdeas() {
+  const merged = new Map();
+  state.generatedIdeas.forEach(idea => merged.set(idea.id, idea));
+  state.approvedIdeas.forEach(idea => merged.set(idea.id, idea));
+  state.ideas = [...merged.values()];
+}
+
+function setApprovedIdeas(nextIdeas) {
+  const normalized = (Array.isArray(nextIdeas) ? nextIdeas : [])
+    .map(normalizeIdea)
+    .filter(Boolean);
+  state.approvedIdeas = normalized;
+  state.approvedFingerprint = ideaFingerprint(normalized);
+  rebuildIdeas();
+}
+
+function upsertApprovedIdea(nextIdea) {
+  const normalized = normalizeIdea(nextIdea);
+  if (!normalized) return;
+
+  const idx = state.approvedIdeas.findIndex(i => i.id === normalized.id);
+  if (idx >= 0) {
+    state.approvedIdeas[idx] = normalized;
+  } else {
+    state.approvedIdeas.unshift(normalized);
+  }
+
+  state.approvedFingerprint = ideaFingerprint(state.approvedIdeas);
+  rebuildIdeas();
+}
 
 // ── Persistence ───────────────────────────────────────────────────────────
 
@@ -970,35 +1409,66 @@ function buildLocalCommunityFallback() {
 }
 
 async function fetchVotesBootstrap() {
-  const res = await fetch('/api/votes', { signal: AbortSignal.timeout(3500) });
-  if (!res.ok) throw new Error('Unable to load community votes');
-  return res.json();
+  return requestJson('/api/votes', {}, 3500);
 }
 
 async function postVote(ideaId, dim, value) {
-  const res = await fetch('/api/vote', {
+  return requestJson('/api/vote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ideaId, dim, value }),
-    signal: AbortSignal.timeout(4500),
-  });
-
-  const payload = await res.json();
-  if (!res.ok) throw new Error(payload.error || 'Unable to save vote');
-  return payload;
+  }, 4500);
 }
 
 async function migrateLegacyRatings(ratings) {
-  const res = await fetch('/api/votes/migrate', {
+  return requestJson('/api/votes/migrate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ratings }),
-    signal: AbortSignal.timeout(6500),
-  });
+  }, 6500);
+}
 
-  const payload = await res.json();
-  if (!res.ok) throw new Error(payload.error || 'Unable to migrate ratings');
-  return payload;
+async function fetchApprovedIdeas() {
+  const payload = await requestJson('/api/submissions/approved', {}, 4500);
+  return Array.isArray(payload.ideas) ? payload.ideas : [];
+}
+
+async function postSubmission(payload) {
+  return requestJson('/api/submissions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }, 6500);
+}
+
+async function fetchAdminMe() {
+  return requestJson('/api/admin/me', {}, 3500);
+}
+
+async function postAdminLogin(username, password) {
+  return requestJson('/api/admin/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  }, 5000);
+}
+
+async function postAdminLogout() {
+  return requestJson('/api/admin/logout', { method: 'POST' }, 3500);
+}
+
+async function fetchAdminSubmissions(status) {
+  const q = encodeURIComponent(status || 'pending_approval');
+  return requestJson(`/api/admin/submissions?status=${q}&limit=80`, {}, 6500);
+}
+
+async function postAdminSubmissionAction(id, action, reason) {
+  const body = action === 'reject' ? { reason: reason || '' } : {};
+  return requestJson(`/api/admin/submissions/${encodeURIComponent(id)}/${action}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, 6500);
 }
 
 async function hydrateRatingsAndCommunity() {
@@ -1029,6 +1499,15 @@ async function hydrateRatingsAndCommunity() {
   }
 }
 
+async function hydrateApprovedIdeas() {
+  try {
+    const approved = await fetchApprovedIdeas();
+    setApprovedIdeas(approved);
+  } catch (_) {
+    setApprovedIdeas([]);
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function getIdea(id) { return state.ideas.find(i => i.id === id); }
@@ -1056,6 +1535,18 @@ function getCommunityVoters(id) {
 }
 
 function hasCommunityVotes(id) { return getCommunityVoters(id) > 0; }
+
+function fmtDateTime(ts) {
+  const n = Number(ts);
+  if (!Number.isFinite(n) || n <= 0) return 'n/a';
+  return new Date(n).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 function fmtVoters(voters) {
   return `${voters} voter${voters === 1 ? '' : 's'}`;
@@ -1093,14 +1584,25 @@ function getAvg(id) {
 function isRated(id) { return hasCommunityVotes(id); }
 
 function uniqueMonths() {
-  return [...new Set(state.ideas.map(i => i.date.slice(0, 7)))].sort();
+  return [...new Set(
+    state.ideas
+      .map(i => String(i.date || '').slice(0, 7))
+      .filter(m => /^\d{4}-\d{2}$/.test(m))
+  )].sort();
 }
 
 function fmtMonth(ym) {
-  return new Date(ym + '-15').toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+  const d = new Date(`${ym}-15T12:00:00`);
+  return Number.isNaN(d.getTime())
+    ? ym
+    : d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }
+
 function fmtMonthLong(date) {
-  return new Date(date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const d = new Date(`${date}T12:00:00`);
+  return Number.isNaN(d.getTime())
+    ? date
+    : d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
 // ── Filtered list ─────────────────────────────────────────────────────────
@@ -1165,7 +1667,7 @@ function esc(s) {
 }
 
 function descHtml(text) {
-  return text.split(/\n\n+/)
+  return String(text || '').split(/\n\n+/)
     .filter(p => p.trim())
     .map(p => `<p>${esc(p.replace(/\n/g, ' ').trim())}</p>`)
     .join('');
@@ -1180,7 +1682,10 @@ function cardHtml(idea) {
   const voters       = getCommunityVoters(idea.id);
   const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
     const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
-  const mon          = fmtMonth(idea.date.slice(0, 7));
+  const mon          = fmtMonth(String(idea.date).slice(0, 7));
+  const sourceHtml   = idea.submittedBy
+    ? `<div class="card-source">submitted by ${esc(idea.submittedBy)}</div>`
+    : '';
 
   const communityHtml = communityAvg !== null
     ? `<div class="card-community">community <span class="avg-value">${communityAvg.toFixed(1)}</span> <span class="card-voters">• ${fmtVoters(voters)}</span></div>`
@@ -1209,6 +1714,7 @@ function cardHtml(idea) {
         <span class="card-date">${esc(mon)}</span>
       </div>
       <h3 class="card-title">${esc(idea.title)}</h3>
+      ${sourceHtml}
       <p class="card-excerpt">${esc(idea.description)}</p>
       <div class="card-footer">${footerHtml}</div>
     </div>`;
@@ -1222,7 +1728,8 @@ function detailHtml(idea) {
   const communityAvg = getCommunityAvg(idea.id);
   const voters       = getCommunityVoters(idea.id);
   const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
-    const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const sourceTag    = idea.submittedBy ? `submitted by ${idea.submittedBy}` : idea.sourceFile;
 
   const dimRows = DIMS.map(d => {
     const val = rating[d.key] || 0;
@@ -1268,7 +1775,7 @@ function detailHtml(idea) {
       <div class="detail-meta">
         <span class="badge ${catCls}">${catLbl}</span>
         <span class="detail-date">${esc(fmtMonthLong(idea.date))}</span>
-        <span class="detail-file-tag">${esc(idea.sourceFile)}</span>
+        <span class="detail-file-tag">${esc(sourceTag)}</span>
       </div>
       <h2 class="detail-title">${esc(idea.title)}</h2>
       <div class="detail-body">${descHtml(idea.description)}</div>
@@ -1358,8 +1865,10 @@ function closeDetail() {
 function refreshCard(id) {
   const el = document.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
   if (!el) return;
+  const idea = getIdea(id);
+  if (!idea) return;
   const tmp = document.createElement('div');
-  tmp.innerHTML = cardHtml(getIdea(id));
+  tmp.innerHTML = cardHtml(idea);
   const newEl = tmp.firstElementChild;
   newEl.addEventListener('click', () => openDetail(id));
   newEl.addEventListener('keydown', e => {
@@ -1419,6 +1928,293 @@ async function syncVoteToServer(panel, ideaId, dim, val) {
     state.apiOnline = false;
     // Keep optimistic local vote; next successful sync or reload will reconcile state.
   }
+}
+
+function setFormMessage(el, text, type) {
+  if (!el) return;
+  el.textContent = text || '';
+  el.className = `form-msg${type ? ` ${type}` : ''}`;
+}
+
+// ── Visitor submissions ───────────────────────────────────────────────────
+
+function setupSubmissionForm() {
+  const form = document.getElementById('submission-form');
+  const statusEl = document.getElementById('submission-status');
+  const submitBtn = document.getElementById('submission-submit-btn');
+  if (!form || !statusEl || !submitBtn) return;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const fd = new FormData(form);
+    const payload = {
+      nickname: String(fd.get('nickname') || '').trim(),
+      category: String(fd.get('category') || '').trim(),
+      title: String(fd.get('title') || '').trim(),
+      description: String(fd.get('description') || '').trim(),
+      contact: String(fd.get('contact') || '').trim(),
+    };
+
+    if (payload.nickname.length < 2) {
+      setFormMessage(statusEl, 'Nickname must be at least 2 characters.', 'error');
+      return;
+    }
+    if (payload.title.length < 8) {
+      setFormMessage(statusEl, 'Title must be at least 8 characters.', 'error');
+      return;
+    }
+    if (payload.description.length < 20) {
+      setFormMessage(statusEl, 'Description must be at least 20 characters.', 'error');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    setFormMessage(statusEl, 'Submitting your idea for moderation...', '');
+
+    try {
+      await postSubmission(payload);
+      form.reset();
+      setFormMessage(statusEl, 'Submitted. Your idea is now waiting for moderation approval.', 'success');
+    } catch (error) {
+      setFormMessage(statusEl, error.message || 'Could not submit your idea right now.', 'error');
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+}
+
+// ── Admin moderation board ────────────────────────────────────────────────
+
+function applyAdminUiState() {
+  const loginForm = document.getElementById('admin-login-form');
+  const panel = document.getElementById('admin-panel');
+  const statusEl = document.getElementById('admin-status');
+  const welcome = document.getElementById('admin-welcome');
+  if (!loginForm || !panel || !statusEl || !welcome) return;
+
+  if (!state.admin.configured) {
+    loginForm.hidden = true;
+    panel.hidden = true;
+    setFormMessage(statusEl, 'Moderation login disabled: set ADMIN_USERNAME and ADMIN_PASSWORD on the server.', 'error');
+    return;
+  }
+
+  if (state.admin.authenticated) {
+    loginForm.hidden = true;
+    panel.hidden = false;
+    welcome.textContent = `Signed in as ${state.admin.username}`;
+  } else {
+    panel.hidden = true;
+    loginForm.hidden = false;
+    if (!statusEl.textContent || statusEl.classList.contains('success')) {
+      setFormMessage(statusEl, 'Login required to moderate submissions.', '');
+    }
+  }
+}
+
+function renderAdminQueue(items) {
+  const queue = document.getElementById('admin-queue');
+  if (!queue) return;
+
+  if (!items || !items.length) {
+    queue.innerHTML = '<div class="admin-item"><p>No submissions for this filter.</p></div>';
+    return;
+  }
+
+  queue.innerHTML = items.map((row) => {
+    const catCls = row.category === 'developer' ? 'badge-dev' : 'badge-gen';
+    const catLbl = row.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+    const statusCls = row.status === 'rejected' ? 'rejected' : (row.status === 'approved' ? 'approved' : 'pending');
+    const statusLabel = String(row.status || '').replace(/_/g, ' ');
+    const canModerate = row.status === 'pending_approval';
+    const reason = row.rejectionReason ? `<div class="admin-note">Reason: ${esc(row.rejectionReason)}</div>` : '';
+    const contact = row.contact ? `<div class="admin-contact">Contact: ${esc(row.contact)}</div>` : '';
+
+    return `
+      <article class="admin-item">
+        <div class="admin-item-top">
+          <span class="badge ${catCls}">${catLbl}</span>
+          <span class="admin-status ${statusCls}">${esc(statusLabel)}</span>
+        </div>
+        <h4>${esc(row.title)}</h4>
+        <div class="admin-meta">by ${esc(row.nickname)} • ${esc(fmtDateTime(row.submittedAt))}</div>
+        <p>${esc(row.description)}</p>
+        ${contact}
+        ${reason}
+        ${canModerate ? `
+          <div class="admin-actions">
+            <button type="button" class="btn success" data-action="approve" data-id="${esc(row.id)}">Approve</button>
+            <button type="button" class="btn danger" data-action="reject" data-id="${esc(row.id)}">Reject</button>
+          </div>
+        ` : ''}
+      </article>`;
+  }).join('');
+}
+
+async function loadAdminQueue() {
+  if (!state.admin.authenticated) return;
+
+  const statusEl = document.getElementById('admin-status');
+  const statusSelect = document.getElementById('admin-status-filter');
+  const status = statusSelect ? statusSelect.value : state.admin.queueStatus;
+  state.admin.queueStatus = status;
+
+  setFormMessage(statusEl, 'Loading moderation queue...', '');
+
+  try {
+    const payload = await fetchAdminSubmissions(status);
+    renderAdminQueue(payload.submissions || []);
+    const label = String(status).replace(/_/g, ' ');
+    setFormMessage(statusEl, `${payload.total || 0} item(s) in ${label}.`, '');
+  } catch (error) {
+    if (error && error.status === 401) {
+      state.admin.authenticated = false;
+      state.admin.username = '';
+      applyAdminUiState();
+      setFormMessage(statusEl, 'Session expired. Please login again.', 'error');
+      return;
+    }
+
+    renderAdminQueue([]);
+    setFormMessage(statusEl, error.message || 'Unable to load moderation queue.', 'error');
+  }
+}
+
+function setupAdminPanel() {
+  const loginForm = document.getElementById('admin-login-form');
+  const statusEl = document.getElementById('admin-status');
+  const refreshBtn = document.getElementById('admin-refresh-btn');
+  const logoutBtn = document.getElementById('admin-logout-btn');
+  const statusSelect = document.getElementById('admin-status-filter');
+  const queue = document.getElementById('admin-queue');
+  if (!loginForm || !statusEl || !refreshBtn || !logoutBtn || !statusSelect || !queue) return;
+
+  loginForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const fd = new FormData(loginForm);
+    const username = String(fd.get('username') || '').trim();
+    const password = String(fd.get('password') || '');
+
+    setFormMessage(statusEl, 'Signing in...', '');
+
+    try {
+      const payload = await postAdminLogin(username, password);
+      state.admin.authenticated = true;
+      state.admin.username = payload && payload.admin ? payload.admin.username : username;
+      setFormMessage(statusEl, 'Login successful.', 'success');
+      applyAdminUiState();
+      await loadAdminQueue();
+    } catch (error) {
+      setFormMessage(statusEl, error.message || 'Login failed.', 'error');
+    }
+  });
+
+  refreshBtn.addEventListener('click', () => {
+    loadAdminQueue();
+  });
+
+  statusSelect.addEventListener('change', () => {
+    loadAdminQueue();
+  });
+
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await postAdminLogout();
+    } catch (_) {
+      // Ignore logout transport errors and clear local state.
+    }
+
+    state.admin.authenticated = false;
+    state.admin.username = '';
+    applyAdminUiState();
+    renderAdminQueue([]);
+    setFormMessage(statusEl, 'Logged out.', '');
+  });
+
+  queue.addEventListener('click', async (event) => {
+    const button = event.target.closest('button[data-action][data-id]');
+    if (!button) return;
+
+    const action = button.dataset.action;
+    const id = button.dataset.id;
+    if (!id || (action !== 'approve' && action !== 'reject')) return;
+
+    let reason = '';
+    if (action === 'reject') {
+      const answer = window.prompt('Optional rejection reason:', '');
+      if (answer === null) return;
+      reason = answer;
+    }
+
+    button.disabled = true;
+    setFormMessage(statusEl, action === 'approve' ? 'Approving submission...' : 'Rejecting submission...', '');
+
+    try {
+      const payload = await postAdminSubmissionAction(id, action, reason);
+
+      if (action === 'approve' && payload.idea) {
+        upsertApprovedIdea(payload.idea);
+        renderMonthPills();
+        renderGrid();
+      }
+
+      await loadAdminQueue();
+      setFormMessage(statusEl, action === 'approve' ? 'Submission approved and published.' : 'Submission rejected.', 'success');
+    } catch (error) {
+      if (error && error.status === 401) {
+        state.admin.authenticated = false;
+        state.admin.username = '';
+        applyAdminUiState();
+      }
+      setFormMessage(statusEl, error.message || 'Moderation action failed.', 'error');
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
+async function bootstrapAdminSession() {
+  const statusEl = document.getElementById('admin-status');
+
+  try {
+    const payload = await fetchAdminMe();
+    state.admin.configured = payload.configured !== false;
+    state.admin.authenticated = Boolean(payload.authenticated);
+    state.admin.username = payload && payload.admin && payload.admin.username
+      ? payload.admin.username
+      : '';
+  } catch (_) {
+    state.admin.configured = false;
+    state.admin.authenticated = false;
+    state.admin.username = '';
+  }
+
+  applyAdminUiState();
+
+  if (state.admin.authenticated) {
+    await loadAdminQueue();
+  } else if (state.admin.configured && statusEl) {
+    setFormMessage(statusEl, 'Login required to moderate submissions.', '');
+  }
+}
+
+function startApprovedPolling() {
+  window.setInterval(async () => {
+    try {
+      const latest = (await fetchApprovedIdeas())
+        .map(normalizeIdea)
+        .filter(Boolean);
+      const nextFingerprint = ideaFingerprint(latest);
+      if (nextFingerprint === state.approvedFingerprint) return;
+
+      setApprovedIdeas(latest);
+      renderMonthPills();
+      renderGrid();
+    } catch (_) {
+      // Ignore polling failures; next cycle will retry.
+    }
+  }, APPROVED_REFRESH_MS);
 }
 
 // ── Star interactions ─────────────────────────────────────────────────────
@@ -1568,7 +2364,10 @@ async function checkForUpdates() {
 async function init() {
   await checkForUpdates();
   loadRatings();
-  await hydrateRatingsAndCommunity();
+  await Promise.all([
+    hydrateRatingsAndCommunity(),
+    hydrateApprovedIdeas(),
+  ]);
 
   // Show last file date from meta
   if (window.IDEAS_META && window.IDEAS_META.lastFileDate) {
@@ -1580,15 +2379,19 @@ async function init() {
     }
   }
 
-  if (!window.IDEAS_DATA || !window.IDEAS_DATA.length) {
+  if (!state.ideas.length) {
     document.getElementById('app').innerHTML = `
       <div class="no-data-screen">
         <h2>No data loaded</h2>
-        <p>Start the server, then open in your browser.</p>
+        <p>Start the server and add ideas or approve submissions.</p>
         <code>node server.js</code>
       </div>`;
     return;
   }
+
+  setupSubmissionForm();
+  setupAdminPanel();
+  await bootstrapAdminSession();
 
   renderMonthPills();
   renderGrid();
@@ -1628,6 +2431,8 @@ async function init() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape' && state.selectedId) closeDetail();
   });
+
+  startApprovedPolling();
 }
 
 document.addEventListener('DOMContentLoaded', init);
