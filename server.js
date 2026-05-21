@@ -42,6 +42,7 @@ function loadEnvFile(filePath) {
 loadEnvFile(path.join(__dirname, '.env'));
 
 const PORT = Number(process.env.PORT || 3737);
+const HOST = process.env.HOST || '0.0.0.0';
 const DIR  = __dirname;
 
 const DB_PATH = process.env.VOTES_DB_PATH
@@ -78,6 +79,11 @@ const writeBuckets = new Map();
 const adminSessions = new Map();
 let lastAdminSessionCleanup = 0;
 let IDEA_IDS = new Set();
+
+const dbDir = path.dirname(DB_PATH);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
 
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
@@ -841,6 +847,16 @@ const server = http.createServer((req, res) => {
     });
   }
 
+  // ── GET /api/health ──────────────────────────────────────────────────
+  if (req.method === 'GET' && url.pathname === '/api/health') {
+    return sendJSON(res, 200, {
+      ok: true,
+      service: 'business-ideas-api',
+      now: Date.now(),
+      adminConfigured: hasAdminCredentials(),
+    });
+  }
+
   // ── POST /api/regenerate ──────────────────────────────────────────────
   if (req.method === 'POST' && url.pathname === '/api/regenerate') {
     const result = spawnSync(process.execPath, ['generate.js'], {
@@ -1284,11 +1300,12 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, '127.0.0.1', () => {
+server.listen(PORT, HOST, () => {
+  const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
   console.log('\n╔══════════════════════════════════════════╗');
   console.log('║   Business Ideas Archive — Server ready  ║');
   console.log('╚══════════════════════════════════════════╝');
-  console.log(`\n   ➜  http://localhost:${PORT}\n`);
+  console.log(`\n   ➜  http://${displayHost}:${PORT}\n`);
   console.log('   The app will auto-detect new .md files on each page load.');
   console.log(`   Votes DB: ${DB_PATH}`);
   console.log(`   Submissions daily limit: ${Math.max(1, SUBMISSION_DAILY_LIMIT)} per ${Math.round(Math.max(60_000, SUBMISSION_WINDOW_MS) / 3600000)}h window`);

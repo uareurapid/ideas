@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: business-ideas
+    runtime: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: VOTES_DB_PATH
+        value: /var/data/votes.sqlite
+      - key: VOTER_COOKIE_SECURE
+        value: "1"
+      - key: ADMIN_COOKIE_SECURE
+        value: "1"
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+    disk:
+      name: business-ideas-data
+      mountPath: /var/data
+      sizeGB: 1
