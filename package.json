@@ -1,0 +1,24 @@
+{
+  "name": "business_ideas",
+  "version": "1.0.0",
+  "description": "This folder contains AI-generated business ideas for mobile apps and SaaS products.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uareurapid/ideas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/uareurapid/ideas/issues"
+  },
+  "homepage": "https://github.com/uareurapid/ideas#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.10.0"
+  }
+}

@@ -334,6 +334,24 @@ select:focus { border-color: #3b6fd4; }
   color: #f59e0b;
 }
 
+.card-community {
+  margin-top: 0.28rem;
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  color: #6b7280;
+  text-align: right;
+}
+.card-community .avg-value {
+  color: #3b82f6;
+}
+.card-community.empty {
+  color: #9ca3af;
+}
+
+.card-voters {
+  color: #94a3b8;
+}
+
 .card-unrated {
   font-family: var(--f-mono);
   font-size: 0.63rem;
@@ -555,6 +573,15 @@ select:focus { border-color: #3b6fd4; }
   margin-bottom: 0.1rem;
 }
 
+.dim-community {
+  font-family: var(--f-mono);
+  font-size: 0.58rem;
+  color: #8aa7d4;
+  width: 100%;
+  padding-left: calc(140px + 0.75rem);
+  margin-top: -0.2rem;
+}
+
 .overall-row {
   display: flex;
   align-items: center;
@@ -583,6 +610,24 @@ select:focus { border-color: #3b6fd4; }
   font-size: 0.9rem;
   color: #d1d5db;
   font-weight: 700;
+}
+
+.overall-row.community-row {
+  margin-top: 0.2rem;
+  border-top: none;
+  padding-top: 0.15rem;
+}
+
+.overall-row.community-row .overall-score {
+  color: #3b82f6;
+}
+
+.community-voters {
+  text-align: right;
+  font-family: var(--f-mono);
+  font-size: 0.62rem;
+  color: #94a3b8;
+  margin-top: 0.15rem;
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
@@ -819,6 +864,7 @@ select:focus { border-color: #3b6fd4; }
 // ── Config ────────────────────────────────────────────────────────────────
 
 const STORAGE_KEY = 'biz-idea-ratings-v1';
+const MIGRATION_KEY = 'biz-idea-ratings-migrated-v1';
 
 const DIMS = [
   { key: 'feasibility', label: 'Feasibility',    icon: '⚡', hint: 'How easy is it to build and execute?' },
@@ -832,12 +878,14 @@ const DIMS = [
 const state = {
   ideas:        (window.IDEAS_DATA || []),
   ratings:      {},
+  community:    {},
   search:       '',
   category:     'all',
   months:       new Set(),
   ratingFilter: 'all',
   sortBy:       'date-desc',
   selectedId:   null,
+  apiOnline:    false,
 };
 
 // ── Persistence ───────────────────────────────────────────────────────────
@@ -851,15 +899,186 @@ function saveRatings() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.ratings));
 }
 
+function replaceRatings(nextRatings) {
+  state.ratings = (nextRatings && typeof nextRatings === 'object') ? nextRatings : {};
+  saveRatings();
+}
+
+function toScore(value) {
+  if (value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function normalizeAggregate(entry) {
+  const dims = {};
+
+  DIMS.forEach(d => {
+    const nestedVal = entry && entry.dims ? entry.dims[d.key] : undefined;
+    const flatVal   = entry ? entry[d.key] : undefined;
+    dims[d.key] = toScore(nestedVal != null ? nestedVal : flatVal);
+  });
+
+  const votersRaw = entry ? Number(entry.voters) : 0;
+
+  return {
+    overall: toScore(entry && entry.overall),
+    voters: Number.isFinite(votersRaw) && votersRaw > 0 ? Math.floor(votersRaw) : 0,
+    dims,
+  };
+}
+
+function replaceCommunity(nextCommunity) {
+  const out = {};
+
+  if (nextCommunity && typeof nextCommunity === 'object') {
+    Object.entries(nextCommunity).forEach(([ideaId, aggregate]) => {
+      out[ideaId] = normalizeAggregate(aggregate || {});
+    });
+  }
+
+  state.community = out;
+}
+
+function buildLocalCommunityFallback() {
+  const out = {};
+
+  Object.entries(state.ratings).forEach(([ideaId, rating]) => {
+    const dims = {};
+    const vals = [];
+
+    DIMS.forEach(d => {
+      const v = Number(rating[d.key]);
+      if (Number.isFinite(v) && v > 0) {
+        dims[d.key] = v;
+        vals.push(v);
+      } else {
+        dims[d.key] = null;
+      }
+    });
+
+    if (!vals.length) return;
+
+    out[ideaId] = {
+      overall: vals.reduce((a, b) => a + b, 0) / vals.length,
+      voters: 1,
+      dims,
+    };
+  });
+
+  return out;
+}
+
+async function fetchVotesBootstrap() {
+  const res = await fetch('/api/votes', { signal: AbortSignal.timeout(3500) });
+  if (!res.ok) throw new Error('Unable to load community votes');
+  return res.json();
+}
+
+async function postVote(ideaId, dim, value) {
+  const res = await fetch('/api/vote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ideaId, dim, value }),
+    signal: AbortSignal.timeout(4500),
+  });
+
+  const payload = await res.json();
+  if (!res.ok) throw new Error(payload.error || 'Unable to save vote');
+  return payload;
+}
+
+async function migrateLegacyRatings(ratings) {
+  const res = await fetch('/api/votes/migrate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ratings }),
+    signal: AbortSignal.timeout(6500),
+  });
+
+  const payload = await res.json();
+  if (!res.ok) throw new Error(payload.error || 'Unable to migrate ratings');
+  return payload;
+}
+
+async function hydrateRatingsAndCommunity() {
+  const localSnapshot = JSON.parse(JSON.stringify(state.ratings || {}));
+  const hasLocalSnapshot = Object.keys(localSnapshot).length > 0;
+
+  try {
+    const payload = await fetchVotesBootstrap();
+    state.apiOnline = true;
+    replaceRatings(payload.myRatings || {});
+    replaceCommunity(payload.aggregates || {});
+  } catch (_) {
+    state.apiOnline = false;
+    replaceCommunity(buildLocalCommunityFallback());
+    return;
+  }
+
+  const alreadyMigrated = localStorage.getItem(MIGRATION_KEY) === '1';
+  if (alreadyMigrated || !hasLocalSnapshot) return;
+
+  try {
+    const payload = await migrateLegacyRatings(localSnapshot);
+    replaceRatings(payload.myRatings || state.ratings);
+    replaceCommunity(payload.aggregates || state.community);
+    localStorage.setItem(MIGRATION_KEY, '1');
+  } catch (_) {
+    // Leave migration flag unset so we can retry on a future successful load.
+  }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function getIdea(id) { return state.ideas.find(i => i.id === id); }
 
 function getRating(id) { return state.ratings[id] || {}; }
 
+function getCommunity(id) { return state.community[id] || null; }
+
+function getCommunityAvg(id) {
+  const row = getCommunity(id);
+  return row ? row.overall : null;
+}
+
+function getCommunityDim(id, dim) {
+  const row = getCommunity(id);
+  if (!row || !row.dims) return null;
+  return toScore(row.dims[dim]);
+}
+
+function getCommunityVoters(id) {
+  const row = getCommunity(id);
+  if (!row) return 0;
+  const n = Number(row.voters);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
+function hasCommunityVotes(id) { return getCommunityVoters(id) > 0; }
+
+function fmtVoters(voters) {
+  return `${voters} voter${voters === 1 ? '' : 's'}`;
+}
+
+function renderScore(avg) {
+  return avg !== null
+    ? `${avg.toFixed(1)}<span> / 5</span>`
+    : '<span style="font-size:.9rem;color:#d1d5db">—</span>';
+}
+
 function setRating(id, dim, val) {
   if (!state.ratings[id]) state.ratings[id] = {};
-  state.ratings[id][dim] = val;
+  if (val > 0) {
+    state.ratings[id][dim] = val;
+  } else {
+    delete state.ratings[id][dim];
+  }
+
+  if (!Object.keys(state.ratings[id]).length) {
+    delete state.ratings[id];
+  }
+
   saveRatings();
 }
 
@@ -871,7 +1090,7 @@ function getAvg(id) {
   return vals.reduce((a, b) => a + b, 0) / vals.length;
 }
 
-function isRated(id) { return getAvg(id) !== null; }
+function isRated(id) { return hasCommunityVotes(id); }
 
 function uniqueMonths() {
   return [...new Set(state.ideas.map(i => i.date.slice(0, 7)))].sort();
@@ -909,7 +1128,7 @@ function getFiltered() {
   if (state.sortBy === 'date-desc') list.sort((a, b) => b.date.localeCompare(a.date));
   if (state.sortBy === 'date-asc')  list.sort((a, b) => a.date.localeCompare(b.date));
   if (state.sortBy === 'score-desc') {
-    list.sort((a, b) => (getAvg(b.id) ?? -1) - (getAvg(a.id) ?? -1));
+    list.sort((a, b) => (getCommunityAvg(b.id) ?? -1) - (getCommunityAvg(a.id) ?? -1));
   }
 
   return list;
@@ -955,14 +1174,20 @@ function descHtml(text) {
 // ── Card ──────────────────────────────────────────────────────────────────
 
 function cardHtml(idea) {
-  const rating = getRating(idea.id);
-  const avg    = getAvg(idea.id);
-  const catCls = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
-  const catLbl = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
-  const mon    = fmtMonth(idea.date.slice(0, 7));
+  const rating       = getRating(idea.id);
+  const yourAvg      = getAvg(idea.id);
+  const communityAvg = getCommunityAvg(idea.id);
+  const voters       = getCommunityVoters(idea.id);
+  const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
+    const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const mon          = fmtMonth(idea.date.slice(0, 7));
+
+  const communityHtml = communityAvg !== null
+    ? `<div class="card-community">community <span class="avg-value">${communityAvg.toFixed(1)}</span> <span class="card-voters">• ${fmtVoters(voters)}</span></div>`
+    : '<div class="card-community empty">no community votes yet</div>';
 
   let footerHtml;
-  if (avg !== null) {
+  if (yourAvg !== null) {
     footerHtml = `
       <div class="card-dims">
         ${DIMS.map(d => `
@@ -971,9 +1196,10 @@ function cardHtml(idea) {
             <div class="dots">${dots(rating[d.key])}</div>
           </div>`).join('')}
       </div>
-      <div class="card-avg">avg <span class="avg-value">${avg.toFixed(1)}</span></div>`;
+      <div class="card-avg">you <span class="avg-value">${yourAvg.toFixed(1)}</span></div>
+      ${communityHtml}`;
   } else {
-    footerHtml = `<div class="card-unrated">tap to rate →</div>`;
+    footerHtml = `${communityHtml}<div class="card-unrated">tap to rate →</div>`;
   }
 
   return `
@@ -991,13 +1217,17 @@ function cardHtml(idea) {
 // ── Detail panel ──────────────────────────────────────────────────────────
 
 function detailHtml(idea) {
-  const rating = getRating(idea.id);
-  const avg    = getAvg(idea.id);
-  const catCls = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
-  const catLbl = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const rating       = getRating(idea.id);
+  const yourAvg      = getAvg(idea.id);
+  const communityAvg = getCommunityAvg(idea.id);
+  const voters       = getCommunityVoters(idea.id);
+  const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
+    const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
 
   const dimRows = DIMS.map(d => {
     const val = rating[d.key] || 0;
+    const communityDim = getCommunityDim(idea.id, d.key);
+
     return `
       <div class="dim-row">
         <div class="dim-meta">
@@ -1009,16 +1239,26 @@ function detailHtml(idea) {
         </div>
         <span class="dim-score${val ? ' rated' : ''}" data-score="${esc(idea.id)}-${d.key}">${val || '·'}</span>
       </div>
+      <div class="dim-community" data-community-score="${esc(idea.id)}-${d.key}">
+        Community avg: ${communityDim !== null ? communityDim.toFixed(1) : '—'}
+      </div>
       <div class="dim-hint">${esc(d.hint)}</div>`;
   }).join('');
 
   const overallHtml = `
-    <div class="overall-row" id="overall-row">
-      <span class="overall-label">Overall Score</span>
+    <div class="overall-row">
+      <span class="overall-label">Your Score</span>
       <span class="overall-score" id="overall-score">
-        ${avg !== null ? `${avg.toFixed(1)}<span> / 5</span>` : '<span style="font-size:.9rem;color:#d1d5db">—</span>'}
+        ${renderScore(yourAvg)}
       </span>
-    </div>`;
+    </div>
+    <div class="overall-row community-row">
+      <span class="overall-label">Community</span>
+      <span class="overall-score" id="community-overall-score">
+        ${renderScore(communityAvg)}
+      </span>
+    </div>
+    <div class="community-voters" id="community-voters">${fmtVoters(voters)}</div>`;
 
   return `
     <div class="detail-inner">
@@ -1128,6 +1368,59 @@ function refreshCard(id) {
   el.replaceWith(newEl);
 }
 
+function refreshDetailCommunity(panel, ideaId) {
+  const communityOverallEl = panel.querySelector('#community-overall-score');
+  if (communityOverallEl) {
+    communityOverallEl.innerHTML = renderScore(getCommunityAvg(ideaId));
+  }
+
+  const votersEl = panel.querySelector('#community-voters');
+  if (votersEl) {
+    votersEl.textContent = fmtVoters(getCommunityVoters(ideaId));
+  }
+
+  DIMS.forEach(d => {
+    const score = getCommunityDim(ideaId, d.key);
+    const selector = `[data-community-score="${ideaId}-${d.key}"]`;
+    const dimEl = panel.querySelector(selector);
+    if (dimEl) {
+      dimEl.textContent = `Community avg: ${score !== null ? score.toFixed(1) : '—'}`;
+    }
+  });
+}
+
+async function syncVoteToServer(panel, ideaId, dim, val) {
+  try {
+    const payload = await postVote(ideaId, dim, val);
+    state.apiOnline = true;
+
+    if (payload && payload.myRating && typeof payload.myRating === 'object') {
+      if (Object.keys(payload.myRating).length) {
+        state.ratings[ideaId] = payload.myRating;
+      } else {
+        delete state.ratings[ideaId];
+      }
+      saveRatings();
+
+      const overallEl = panel.querySelector('#overall-score');
+      if (overallEl) {
+        overallEl.innerHTML = renderScore(getAvg(ideaId));
+      }
+    }
+
+    if (payload && payload.aggregate) {
+      state.community[ideaId] = normalizeAggregate(payload.aggregate);
+    }
+
+    refreshDetailCommunity(panel, ideaId);
+    refreshCard(ideaId);
+    renderStats(getFiltered());
+  } catch (_) {
+    state.apiOnline = false;
+    // Keep optimistic local vote; next successful sync or reload will reconcile state.
+  }
+}
+
 // ── Star interactions ─────────────────────────────────────────────────────
 
 function bindStarInteractions(panel, ideaId) {
@@ -1176,14 +1469,14 @@ function bindStarInteractions(panel, ideaId) {
         const avg       = getAvg(ideaId);
         const overallEl = document.getElementById('overall-score');
         if (overallEl) {
-          overallEl.innerHTML = avg !== null
-            ? `${avg.toFixed(1)}<span> / 5</span>`
-            : '<span style="font-size:.9rem;color:#d1d5db">—</span>';
+          overallEl.innerHTML = renderScore(avg);
         }
 
-        // refresh card in grid + stats
+        // Optimistic local refresh before server sync.
         refreshCard(ideaId);
         renderStats(getFiltered());
+
+        syncVoteToServer(panel, ideaId, dim, val);
       });
     });
   });
@@ -1275,6 +1568,7 @@ async function checkForUpdates() {
 async function init() {
   await checkForUpdates();
   loadRatings();
+  await hydrateRatingsAndCommunity();
 
   // Show last file date from meta
   if (window.IDEAS_META && window.IDEAS_META.lastFileDate) {
