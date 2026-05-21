@@ -1261,6 +1261,8 @@ const state = {
     configured: true,
     username: '',
     queueStatus: 'pending_approval',
+    apiReachable: true,
+    apiError: '',
   },
 };
 
@@ -1993,6 +1995,17 @@ function applyAdminUiState() {
   const welcome = document.getElementById('admin-welcome');
   if (!loginForm || !panel || !statusEl || !welcome) return;
 
+  if (!state.admin.apiReachable) {
+    loginForm.hidden = true;
+    panel.hidden = true;
+    setFormMessage(
+      statusEl,
+      'Moderation backend unavailable: /api/admin/me is not reachable. This usually means the site is deployed as static-only and server.js is not running.',
+      'error'
+    );
+    return;
+  }
+
   if (!state.admin.configured) {
     loginForm.hidden = true;
     panel.hidden = true;
@@ -2179,13 +2192,17 @@ async function bootstrapAdminSession() {
 
   try {
     const payload = await fetchAdminMe();
+    state.admin.apiReachable = true;
+    state.admin.apiError = '';
     state.admin.configured = payload.configured !== false;
     state.admin.authenticated = Boolean(payload.authenticated);
     state.admin.username = payload && payload.admin && payload.admin.username
       ? payload.admin.username
       : '';
-  } catch (_) {
-    state.admin.configured = false;
+  } catch (error) {
+    state.admin.apiReachable = false;
+    state.admin.apiError = (error && error.message) ? error.message : 'Unknown network error';
+    state.admin.configured = true;
     state.admin.authenticated = false;
     state.admin.username = '';
   }
