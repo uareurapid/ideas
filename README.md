@@ -91,6 +91,7 @@ http://localhost:3737
 
 - Visitors can submit ideas directly from the app UI.
 - Required fields: nickname, title, description, category.
+- Allowed category values: `general`, `developer`, `mobile`.
 - Optional field: contact info.
 - Policy: one submission per anonymous visitor identity per 24-hour window (default).
 - New submissions are stored as `pending_approval`.
@@ -105,7 +106,7 @@ http://localhost:3737
 - `GET /api/admin/me` - Admin session check
 - `POST /api/admin/login` - Admin login
 - `POST /api/admin/logout` - Admin logout
-- `GET /api/admin/submissions` - Admin queue listing (`status=pending_approval|approved|rejected|all`)
+- `GET /api/admin/submissions` - Admin queue listing (`status=pending_approval|approved|rejected|all`, `category=all|general|developer|mobile`)
 - `POST /api/admin/submissions/:id/approve` - Approve + publish submission
 - `POST /api/admin/submissions/:id/reject` - Reject submission
 

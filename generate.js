@@ -51,6 +51,7 @@ function parseIdeasFromBlock(text, category, date) {
     const num    = parseInt(match[1], 10);
     const title  = match[2]
       .replace(/🛠️\s*(DEV\s*TOOL)?/gi, '')
+      .replace(/📱\s*(MOBILE\s*APP)?/gi, '')
       .trim();
 
     if (!title) continue;
@@ -62,7 +63,7 @@ function parseIdeasFromBlock(text, category, date) {
     ideas.push({
       id:         makeId(date, num, title),
       date,
-      category,   // 'general' | 'developer'
+      category,   // 'general' | 'developer' | 'mobile'
       title,
       description: desc,
       ideaNumber: num,
@@ -83,8 +84,9 @@ function parseFile(filename) {
   const ideas = [];
   const hasGeneral = /^## General Ideas?/im.test(content);
   const hasDev     = /^## Developer Tools?/im.test(content);
+  const hasMobile  = /^## Mobile (App )?Ideas?/im.test(content);
 
-  if (hasGeneral || hasDev) {
+  if (hasGeneral || hasDev || hasMobile) {
     // Split content into category sections
     const lines = content.split('\n');
     let currentCat  = 'general';
@@ -102,6 +104,7 @@ function parseFile(filename) {
     for (const line of lines) {
       if (/^## General/i.test(line))   { flush(); currentCat = 'general'; }
       else if (/^## Developer/i.test(line)) { flush(); currentCat = 'developer'; }
+      else if (/^## Mobile/i.test(line)) { flush(); currentCat = 'mobile'; }
       else                              { sectionLines.push(line); }
     }
     flush();

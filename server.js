@@ -72,7 +72,7 @@ const SUBMISSION_CONTACT_MAX = Number(process.env.SUBMISSION_CONTACT_MAX || 120)
 
 const DIMS = ['feasibility', 'speed', 'gap', 'demand'];
 const DIM_SET = new Set(DIMS);
-const CATEGORY_SET = new Set(['general', 'developer']);
+const CATEGORY_SET = new Set(['general', 'developer', 'mobile']);
 const SUBMISSION_STATUS_SET = new Set(['pending_approval', 'approved', 'rejected']);
 
 const writeBuckets = new Map();
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS submissions (
   nickname TEXT NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL,
-  category TEXT NOT NULL CHECK (category IN ('general', 'developer')),
+  category TEXT NOT NULL CHECK (category IN ('general', 'developer', 'mobile')),
   contact TEXT,
   status TEXT NOT NULL CHECK (status IN ('pending_approval', 'approved', 'rejected')),
   submitted_at INTEGER NOT NULL,
@@ -122,11 +122,96 @@ CREATE TABLE IF NOT EXISTS submissions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+CREATE INDEX IF NOT EXISTS idx_submissions_category ON submissions(category);
 CREATE INDEX IF NOT EXISTS idx_submissions_voter_submitted_at ON submissions(voter_id, submitted_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_published_idea_id
   ON submissions(published_as_idea_id)
   WHERE published_as_idea_id IS NOT NULL;
 `);
+
+function submissionsSchemaHasMobileCategory() {
+  const row = db.prepare(`
+    SELECT sql
+    FROM sqlite_master
+    WHERE type = 'table' AND name = 'submissions'
+    LIMIT 1
+  `).get();
+
+  const schemaSql = String((row && row.sql) || '').toLowerCase();
+  return schemaSql.includes("'mobile'");
+}
+
+const migrateSubmissionsSchemaTx = db.transaction(() => {
+  db.exec(`
+    ALTER TABLE submissions RENAME TO submissions_legacy;
+
+    CREATE TABLE submissions (
+      id TEXT PRIMARY KEY,
+      voter_id TEXT NOT NULL,
+      nickname TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      category TEXT NOT NULL CHECK (category IN ('general', 'developer', 'mobile')),
+      contact TEXT,
+      status TEXT NOT NULL CHECK (status IN ('pending_approval', 'approved', 'rejected')),
+      submitted_at INTEGER NOT NULL,
+      approved_at INTEGER,
+      approved_by TEXT,
+      rejected_at INTEGER,
+      rejected_by TEXT,
+      rejection_reason TEXT,
+      published_as_idea_id TEXT
+    );
+
+    INSERT INTO submissions (
+      id,
+      voter_id,
+      nickname,
+      title,
+      description,
+      category,
+      contact,
+      status,
+      submitted_at,
+      approved_at,
+      approved_by,
+      rejected_at,
+      rejected_by,
+      rejection_reason,
+      published_as_idea_id
+    )
+    SELECT
+      id,
+      voter_id,
+      nickname,
+      title,
+      description,
+      category,
+      contact,
+      status,
+      submitted_at,
+      approved_at,
+      approved_by,
+      rejected_at,
+      rejected_by,
+      rejection_reason,
+      published_as_idea_id
+    FROM submissions_legacy;
+
+    DROP TABLE submissions_legacy;
+
+    CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+    CREATE INDEX IF NOT EXISTS idx_submissions_category ON submissions(category);
+    CREATE INDEX IF NOT EXISTS idx_submissions_voter_submitted_at ON submissions(voter_id, submitted_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_submissions_published_idea_id
+      ON submissions(published_as_idea_id)
+      WHERE published_as_idea_id IS NOT NULL;
+  `);
+});
+
+if (!submissionsSchemaHasMobileCategory()) {
+  migrateSubmissionsSchemaTx();
+}
 
 const upsertVoteStmt = db.prepare(`
   INSERT INTO votes (voter_id, idea_id, dimension, value, updated_at)
@@ -291,6 +376,52 @@ const listSubmissionsByStatusStmt = db.prepare(`
   LIMIT ? OFFSET ?
 `);
 
+const listSubmissionsByCategoryStmt = db.prepare(`
+  SELECT
+    id,
+    voter_id,
+    nickname,
+    title,
+    description,
+    category,
+    contact,
+    status,
+    submitted_at,
+    approved_at,
+    approved_by,
+    rejected_at,
+    rejected_by,
+    rejection_reason,
+    published_as_idea_id
+  FROM submissions
+  WHERE category = ?
+  ORDER BY submitted_at DESC
+  LIMIT ? OFFSET ?
+`);
+
+const listSubmissionsByStatusAndCategoryStmt = db.prepare(`
+  SELECT
+    id,
+    voter_id,
+    nickname,
+    title,
+    description,
+    category,
+    contact,
+    status,
+    submitted_at,
+    approved_at,
+    approved_by,
+    rejected_at,
+    rejected_by,
+    rejection_reason,
+    published_as_idea_id
+  FROM submissions
+  WHERE status = ? AND category = ?
+  ORDER BY submitted_at DESC
+  LIMIT ? OFFSET ?
+`);
+
 const countSubmissionsAllStmt = db.prepare(`
   SELECT COUNT(*) AS total
   FROM submissions
@@ -300,6 +431,18 @@ const countSubmissionsByStatusStmt = db.prepare(`
   SELECT COUNT(*) AS total
   FROM submissions
   WHERE status = ?
+`);
+
+const countSubmissionsByCategoryStmt = db.prepare(`
+  SELECT COUNT(*) AS total
+  FROM submissions
+  WHERE category = ?
+`);
+
+const countSubmissionsByStatusAndCategoryStmt = db.prepare(`
+  SELECT COUNT(*) AS total
+  FROM submissions
+  WHERE status = ? AND category = ?
 `);
 
 const approveSubmissionStmt = db.prepare(`
@@ -931,7 +1074,7 @@ const server = http.createServer((req, res) => {
         }
 
         if (!category) {
-          return sendJSON(res, 400, { ok: false, error: 'Category must be general or developer.' }, headers);
+          return sendJSON(res, 400, { ok: false, error: 'Category must be general, developer, or mobile.' }, headers);
         }
 
         const now = Date.now();
@@ -1050,25 +1193,39 @@ const server = http.createServer((req, res) => {
     if (!session) return;
 
     const status = sanitizeSingleLine(url.searchParams.get('status') || 'pending_approval', 24);
+    const category = sanitizeSingleLine(url.searchParams.get('category') || 'all', 24).toLowerCase();
     const limit = toIntWithin(url.searchParams.get('limit'), 40, 1, 200);
     const offset = toIntWithin(url.searchParams.get('offset'), 0, 0, 20_000);
+
+    if (status !== 'all' && !SUBMISSION_STATUS_SET.has(status)) {
+      return sendJSON(res, 400, { ok: false, error: 'Invalid status filter' }, headers);
+    }
+
+    if (category !== 'all' && !CATEGORY_SET.has(category)) {
+      return sendJSON(res, 400, { ok: false, error: 'Invalid category filter' }, headers);
+    }
 
     let rows;
     let total;
 
-    if (status === 'all') {
+    if (status === 'all' && category === 'all') {
       rows = listSubmissionsAllStmt.all(limit, offset);
       total = Number(countSubmissionsAllStmt.get().total) || 0;
-    } else if (SUBMISSION_STATUS_SET.has(status)) {
+    } else if (status === 'all') {
+      rows = listSubmissionsByCategoryStmt.all(category, limit, offset);
+      total = Number(countSubmissionsByCategoryStmt.get(category).total) || 0;
+    } else if (category === 'all') {
       rows = listSubmissionsByStatusStmt.all(status, limit, offset);
       total = Number(countSubmissionsByStatusStmt.get(status).total) || 0;
     } else {
-      return sendJSON(res, 400, { ok: false, error: 'Invalid status filter' }, headers);
+      rows = listSubmissionsByStatusAndCategoryStmt.all(status, category, limit, offset);
+      total = Number(countSubmissionsByStatusAndCategoryStmt.get(status, category).total) || 0;
     }
 
     return sendJSON(res, 200, {
       ok: true,
       status,
+      category,
       total,
       submissions: rows.map(submissionRowToAdminDto),
       admin: { username: session.username },

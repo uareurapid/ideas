@@ -25,6 +25,9 @@
   --dev:          #c026d3;
   --dev-bg:       #fae8ff;
   --dev-text:     #a21caf;
+  --mob:          #0891b2;
+  --mob-bg:       #cffafe;
+  --mob-text:     #0e7490;
 
   --star:         #f59e0b;
   --star-hover:   #fbbf24;
@@ -185,6 +188,7 @@ header {
 .cat-btn.active { background: #161b27; color: #c8d4e8; border-color: #2d3f5e; }
 .cat-btn.active[data-cat="general"]  { border-color: var(--gen);  color: #93c5fd; }
 .cat-btn.active[data-cat="developer"]{ border-color: var(--dev);  color: #f0abfc; }
+.cat-btn.active[data-cat="mobile"]   { border-color: var(--mob);  color: #67e8f9; }
 
 #month-pills { display: flex; gap: 0.2rem; flex-wrap: wrap; }
 .pill {
@@ -267,6 +271,7 @@ select:focus { border-color: #3b6fd4; }
 }
 .badge-gen { background: var(--gen-bg); color: var(--gen-text); }
 .badge-dev { background: var(--dev-bg); color: var(--dev-text); }
+.badge-mob { background: var(--mob-bg); color: var(--mob-text); }
 
 .card-date {
   font-family: var(--f-mono);
@@ -954,6 +959,7 @@ select:focus { border-color: #3b6fd4; }
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  flex-wrap: wrap;
 }
 
 .admin-filter-row label {
@@ -1065,6 +1071,10 @@ select:focus { border-color: #3b6fd4; }
         <span class="num" id="stat-dev">—</span>
         <span class="lbl">Dev Tools</span>
       </div>
+      <div class="stat-chip">
+        <span class="num" id="stat-mob">—</span>
+        <span class="lbl">Mobile</span>
+      </div>
       <div class="stat-chip highlight">
         <span class="num" id="stat-rated">—</span>
         <span class="lbl">Rated</span>
@@ -1092,6 +1102,7 @@ select:focus { border-color: #3b6fd4; }
       <button class="cat-btn active" data-cat="all">All</button>
       <button class="cat-btn" data-cat="general">💡 General</button>
       <button class="cat-btn" data-cat="developer">🛠 Dev Tools</button>
+      <button class="cat-btn" data-cat="mobile">📱 Mobile</button>
     </div>
 
     <div class="filter-divider"></div>
@@ -1123,6 +1134,7 @@ select:focus { border-color: #3b6fd4; }
           <select name="category" required>
             <option value="general">General</option>
             <option value="developer">Developer Tool</option>
+            <option value="mobile">Mobile App</option>
           </select>
         </div>
         <input class="input" name="title" type="text" maxlength="140" placeholder="Idea title" required>
@@ -1160,6 +1172,14 @@ select:focus { border-color: #3b6fd4; }
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
               <option value="all">All</option>
+            </select>
+
+            <label for="admin-category-filter">Category</label>
+            <select id="admin-category-filter">
+              <option value="all">All</option>
+              <option value="general">General</option>
+              <option value="developer">Developer Tool</option>
+              <option value="mobile">Mobile App</option>
             </select>
           </div>
 
@@ -1208,7 +1228,7 @@ const DIMS = [
   { key: 'demand',      label: 'Demand',         icon: '📈', hint: 'How strong and obvious is the market demand?' },
 ];
 
-const CATEGORY_SET = new Set(['general', 'developer']);
+const CATEGORY_SET = new Set(['general', 'developer', 'mobile']);
 
 function normalizeIdea(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -1261,6 +1281,7 @@ const state = {
     configured: true,
     username: '',
     queueStatus: 'pending_approval',
+    queueCategory: 'all',
     apiReachable: true,
     apiError: '',
   },
@@ -1459,9 +1480,10 @@ async function postAdminLogout() {
   return requestJson('/api/admin/logout', { method: 'POST' }, 3500);
 }
 
-async function fetchAdminSubmissions(status) {
-  const q = encodeURIComponent(status || 'pending_approval');
-  return requestJson(`/api/admin/submissions?status=${q}&limit=80`, {}, 6500);
+async function fetchAdminSubmissions(status, category) {
+  const qStatus = encodeURIComponent(status || 'pending_approval');
+  const qCategory = encodeURIComponent(category || 'all');
+  return requestJson(`/api/admin/submissions?status=${qStatus}&category=${qCategory}&limit=80`, {}, 6500);
 }
 
 async function postAdminSubmissionAction(id, action, reason) {
@@ -1675,6 +1697,18 @@ function descHtml(text) {
     .join('');
 }
 
+function getCategoryPresentation(category) {
+  if (category === 'developer') {
+    return { badgeClass: 'badge-dev', badgeLabel: '🛠 Dev Tool' };
+  }
+
+  if (category === 'mobile') {
+    return { badgeClass: 'badge-mob', badgeLabel: '📱 Mobile' };
+  }
+
+  return { badgeClass: 'badge-gen', badgeLabel: '💡 General' };
+}
+
 // ── Card ──────────────────────────────────────────────────────────────────
 
 function cardHtml(idea) {
@@ -1682,8 +1716,7 @@ function cardHtml(idea) {
   const yourAvg      = getAvg(idea.id);
   const communityAvg = getCommunityAvg(idea.id);
   const voters       = getCommunityVoters(idea.id);
-  const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
-    const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const cat = getCategoryPresentation(idea.category);
   const mon          = fmtMonth(String(idea.date).slice(0, 7));
   const sourceHtml   = idea.submittedBy
     ? `<div class="card-source">submitted by ${esc(idea.submittedBy)}</div>`
@@ -1712,7 +1745,7 @@ function cardHtml(idea) {
   return `
     <div class="card" data-id="${esc(idea.id)}" tabindex="0" role="button" aria-label="${esc(idea.title)}">
       <div class="card-top">
-        <span class="badge ${catCls}">${catLbl}</span>
+        <span class="badge ${cat.badgeClass}">${cat.badgeLabel}</span>
         <span class="card-date">${esc(mon)}</span>
       </div>
       <h3 class="card-title">${esc(idea.title)}</h3>
@@ -1729,8 +1762,7 @@ function detailHtml(idea) {
   const yourAvg      = getAvg(idea.id);
   const communityAvg = getCommunityAvg(idea.id);
   const voters       = getCommunityVoters(idea.id);
-  const catCls       = idea.category === 'developer' ? 'badge-dev' : 'badge-gen';
-  const catLbl       = idea.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+  const cat = getCategoryPresentation(idea.category);
   const sourceTag    = idea.submittedBy ? `submitted by ${idea.submittedBy}` : idea.sourceFile;
 
   const dimRows = DIMS.map(d => {
@@ -1775,7 +1807,7 @@ function detailHtml(idea) {
         <button class="btn-close" id="btn-close" aria-label="Close">✕</button>
       </div>
       <div class="detail-meta">
-        <span class="badge ${catCls}">${catLbl}</span>
+        <span class="badge ${cat.badgeClass}">${cat.badgeLabel}</span>
         <span class="detail-date">${esc(fmtMonthLong(idea.date))}</span>
         <span class="detail-file-tag">${esc(sourceTag)}</span>
       </div>
@@ -1795,10 +1827,12 @@ function renderStats(filtered) {
   const total     = state.ideas.length;
   const genCount  = state.ideas.filter(i => i.category === 'general').length;
   const devCount  = state.ideas.filter(i => i.category === 'developer').length;
+  const mobCount  = state.ideas.filter(i => i.category === 'mobile').length;
   const ratedCnt  = state.ideas.filter(i => isRated(i.id)).length;
   document.getElementById('stat-total').textContent   = total;
   document.getElementById('stat-gen').textContent     = genCount;
   document.getElementById('stat-dev').textContent     = devCount;
+  document.getElementById('stat-mob').textContent     = mobCount;
   document.getElementById('stat-rated').textContent   = ratedCnt;
   document.getElementById('stat-showing').textContent = filtered.length;
 }
@@ -2036,8 +2070,7 @@ function renderAdminQueue(items) {
   }
 
   queue.innerHTML = items.map((row) => {
-    const catCls = row.category === 'developer' ? 'badge-dev' : 'badge-gen';
-    const catLbl = row.category === 'developer' ? '🛠 Dev Tool' : '💡 General';
+    const cat = getCategoryPresentation(row.category);
     const statusCls = row.status === 'rejected' ? 'rejected' : (row.status === 'approved' ? 'approved' : 'pending');
     const statusLabel = String(row.status || '').replace(/_/g, ' ');
     const canModerate = row.status === 'pending_approval';
@@ -2047,7 +2080,7 @@ function renderAdminQueue(items) {
     return `
       <article class="admin-item">
         <div class="admin-item-top">
-          <span class="badge ${catCls}">${catLbl}</span>
+          <span class="badge ${cat.badgeClass}">${cat.badgeLabel}</span>
           <span class="admin-status ${statusCls}">${esc(statusLabel)}</span>
         </div>
         <h4>${esc(row.title)}</h4>
@@ -2070,16 +2103,22 @@ async function loadAdminQueue() {
 
   const statusEl = document.getElementById('admin-status');
   const statusSelect = document.getElementById('admin-status-filter');
+  const categorySelect = document.getElementById('admin-category-filter');
   const status = statusSelect ? statusSelect.value : state.admin.queueStatus;
+  const category = categorySelect ? categorySelect.value : state.admin.queueCategory;
   state.admin.queueStatus = status;
+  state.admin.queueCategory = category;
 
   setFormMessage(statusEl, 'Loading moderation queue...', '');
 
   try {
-    const payload = await fetchAdminSubmissions(status);
+    const payload = await fetchAdminSubmissions(status, category);
     renderAdminQueue(payload.submissions || []);
-    const label = String(status).replace(/_/g, ' ');
-    setFormMessage(statusEl, `${payload.total || 0} item(s) in ${label}.`, '');
+    const statusLabel = String(status).replace(/_/g, ' ');
+    const categoryLabel = category === 'all'
+      ? 'all categories'
+      : (category === 'developer' ? 'developer tools' : category);
+    setFormMessage(statusEl, `${payload.total || 0} item(s) in ${statusLabel} for ${categoryLabel}.`, '');
   } catch (error) {
     if (error && error.status === 401) {
       state.admin.authenticated = false;
@@ -2100,8 +2139,9 @@ function setupAdminPanel() {
   const refreshBtn = document.getElementById('admin-refresh-btn');
   const logoutBtn = document.getElementById('admin-logout-btn');
   const statusSelect = document.getElementById('admin-status-filter');
+  const categorySelect = document.getElementById('admin-category-filter');
   const queue = document.getElementById('admin-queue');
-  if (!loginForm || !statusEl || !refreshBtn || !logoutBtn || !statusSelect || !queue) return;
+  if (!loginForm || !statusEl || !refreshBtn || !logoutBtn || !statusSelect || !categorySelect || !queue) return;
 
   loginForm.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -2128,6 +2168,10 @@ function setupAdminPanel() {
   });
 
   statusSelect.addEventListener('change', () => {
+    loadAdminQueue();
+  });
+
+  categorySelect.addEventListener('change', () => {
     loadAdminQueue();
   });
 
